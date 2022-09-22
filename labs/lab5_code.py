@@ -182,7 +182,7 @@ agent = Agent(env.observation_space.shape[0], env.action_space.n, 5000)
 
 modelFile = 'model4-memory5k-ep300.pth_300end.pth'
 
-agent.model.load_state_dict(torch.load(modelFile))
+# agent.model.load_state_dict(torch.load(modelFile))
 
 #train(env, agent, modelFile, 300)
 #torch.save(agent.model.state_dict(), modelFile+"_300end.pth")
