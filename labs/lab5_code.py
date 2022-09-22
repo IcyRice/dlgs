@@ -154,7 +154,7 @@ def train(env, agent, fileName, episodes=1000, batch_size=64):  # train for many
     env.close()
 
 
-def playtest(env, agent, fileName, episodes=10):
+def playtest(env, agent, episodes=10):
     #agent.model.state_dict = torch.load('model300.pth')
 
     # print(agent.model.state_dict)
@@ -176,15 +176,15 @@ def playtest(env, agent, fileName, episodes=10):
     env.close()
 
 
-# env = gym.make('CartPole-v1', render_mode='human')  # , render_mode='human')
-env = gym.make('CartPole-v1')
+env = gym.make('CartPole-v1', render_mode='human')  # , render_mode='human')
+#env = gym.make('CartPole-v1')
 agent = Agent(env.observation_space.shape[0], env.action_space.n, 5000)
 
-modelFile = 'model-memory5k-ep300.pth'
+modelFile = 'model3-memory5k-ep300.pth'
 
-agent.model.load_state_dict(torch.load(modelFile))
+# agent.model.load_state_dict(torch.load(modelFile))
 
 train(env, agent, modelFile, 300)
 torch.save(agent.model.state_dict(), modelFile)
 
-#playtest(env, agent, modelFile)
+#playtest(env, agent)
