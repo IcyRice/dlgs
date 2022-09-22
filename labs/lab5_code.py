@@ -146,15 +146,15 @@ def train(env, agent, fileName, episodes=1000, batch_size=64):  # train for many
         if totalReward > highestReward:
             highestReward = totalReward
         print("ep: " + str(e) + " reward = " + str(totalReward) +
-              " / " + str(highestReward) + " (highest)")
+              " / " + str(highestReward) + " (highest)  |  current_epsilon = " + str(agent.epsilon))
         if e > 0 and e % 10 == 0:
-            torch.save(agent.model.state_dict(), fileName)
+            torch.save(agent.model.state_dict(), fileName+"_"+str(episodes)+".pth")#bruh
             # torch.save(agent.)
             print("¤ q-model saved ¤")
     env.close()
 
 
-def playtest(env, agent, fileName, episodes=10):
+def playtest(env, agent, episodes=10):
     #agent.model.state_dict = torch.load('model300.pth')
 
     # print(agent.model.state_dict)
@@ -176,15 +176,15 @@ def playtest(env, agent, fileName, episodes=10):
     env.close()
 
 
-# env = gym.make('CartPole-v1', render_mode='human')  # , render_mode='human')
-env = gym.make('CartPole-v1')
+env = gym.make('CartPole-v1', render_mode='human')  # , render_mode='human')
+#env = gym.make('CartPole-v1')
 agent = Agent(env.observation_space.shape[0], env.action_space.n, 5000)
 
-modelFile = 'model-memory5k-ep300.pth'
+modelFile = 'model4-memory5k-ep300.pth_300end.pth'
 
 agent.model.load_state_dict(torch.load(modelFile))
 
-train(env, agent, modelFile, 300)
-torch.save(agent.model.state_dict(), modelFile)
+#train(env, agent, modelFile, 300)
+#torch.save(agent.model.state_dict(), modelFile+"_300end.pth")
 
-#playtest(env, agent, modelFile)
+playtest(env, agent)
