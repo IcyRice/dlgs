@@ -55,7 +55,7 @@ class Model(nn.Module):
 
 
 class Agent:
-    def __init__(self, observation_size, action_size):
+    def __init__(self, observation_size, action_size, memorySize=1000):
         self.observation_size = observation_size
         self.action_size = action_size
         self.model = Model(observation_size, action_size)
@@ -65,7 +65,7 @@ class Agent:
         self.epsilonMin = 0.00
         self.criterion = nn.MSELoss()
         self.optimizer = optim.Adam(self.model.parameters(), lr=1e-3)
-        self.memorySize = 1000
+        self.memorySize = memorySize
         self.memory = deque([], maxlen=self.memorySize)
 
     def remember(self, state, action, reward, next_state, done):
@@ -124,7 +124,8 @@ class Agent:
         # self.optimizer.step()
 
 
-def train(env, agent, episodes=1000, batch_size=64):  # train for many games
+def train(env, agent, fileName, episodes=1000, batch_size=64):  # train for many games
+    highestReward = 0
     for e in tqdm(range(episodes)):
         state, _ = env.reset()
         done = False
@@ -138,39 +139,52 @@ def train(env, agent, episodes=1000, batch_size=64):  # train for many games
             agent.remember(state, action, reward, next_state, done)
             # 3. update state
             state = next_state
-            # 4. if we have enough experiences in out memory, learn from a batch with replay.
+            # 4. if we have enough experiences in our memory, learn from a batch with replay.
             if len(agent.memory) >= batch_size:
                 agent.replay(batch_size)
 
-        print("ep: " + str(e) + " reward = " + str(totalReward))
-        if e % 10 == 0:
-            torch.save(agent.model.state_dict(), 'model2.pth')
+        if totalReward > highestReward:
+            highestReward = totalReward
+        print("ep: " + str(e) + " reward = " + str(totalReward) +
+              " / " + str(highestReward) + " (highest)")
+        if e > 0 and e % 10 == 0:
+            torch.save(agent.model.state_dict(), fileName)
+            # torch.save(agent.)
             print("¤ q-model saved ¤")
     env.close()
 
 
-env = gym.make('CartPole-v1', render_mode='human')  # , render_mode='human')
-agent = Agent(env.observation_space.shape[0], env.action_space.n)
-train(env, agent)
-torch.save(agent.model.state_dict(), 'model2.pth')
-
-
-def playtest():
-    agent.model.state_dict = torch.load('model2.pth')
+def playtest(env, agent, fileName, episodes=10):
+    #agent.model.state_dict = torch.load('model300.pth')
 
     # print(agent.model.state_dict)
 
-    env = gym.make('CartPole-v1', render_mode='human')
+    #env = gym.make('CartPole-v1', render_mode='human')
 
-    for _ in tqdm(range(100)):
+    for e in tqdm(range(episodes)):
         state, _ = env.reset()
         done = False
+        totalReward = 0
         while not done:
             action = agent.act(state)
             # print(action)
             state, reward, done, _, _ = env.step(action)
+            totalReward += reward
+
+        print("ep: " + str(e) + " reward = " + str(totalReward))
 
     env.close()
 
 
-# playtest()
+# env = gym.make('CartPole-v1', render_mode='human')  # , render_mode='human')
+env = gym.make('CartPole-v1')
+agent = Agent(env.observation_space.shape[0], env.action_space.n, 5000)
+
+modelFile = 'model-memory5k-ep300.pth'
+
+agent.model.load_state_dict(torch.load(modelFile))
+
+train(env, agent, modelFile, 300)
+torch.save(agent.model.state_dict(), modelFile)
+
+#playtest(env, agent, modelFile)
