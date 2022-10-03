@@ -148,7 +148,8 @@ def train(env, agent, fileName, episodes=1000, batch_size=64):  # train for many
         print("ep: " + str(e) + " reward = " + str(totalReward) +
               " / " + str(highestReward) + " (highest)  |  current_epsilon = " + str(agent.epsilon))
         if e > 0 and e % 10 == 0:
-            torch.save(agent.model.state_dict(), fileName+"_"+str(episodes)+".pth")#bruh
+            torch.save(agent.model.state_dict(), fileName +
+                       "_"+str(episodes)+".pth")  # bruh
             # torch.save(agent.)
             print("¤ q-model saved ¤")
     env.close()
