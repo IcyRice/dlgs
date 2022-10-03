@@ -11,6 +11,12 @@ def run():
     game.play()
 
 
+def testUtil():
+    agents = (Agent('O'), Gekko('X'))
+    game = Game(agents)
+    game.play()
+
+
 # world and world model
 class State:
     def __init__(self, cols=7, rows=6, win_req=4):
@@ -70,6 +76,9 @@ def utility(state: 'State'):
     return 0
 
 
+
+
+
 # parrent class for mcts, minmax, human, and any other idea for an agent you have
 class Agent:
     def __init__(self, name: str):
@@ -87,6 +96,8 @@ class Human(Agent):
         # return super().get_action(state)
         a = state.get_avail_actions()
         #userMove = int(input("enter move 0-6: "))
+        #print(utility(state))
+
         userMove = input("enter move 0-6: ")
         if int(userMove) in a:
             return int(userMove)
@@ -95,26 +106,80 @@ class Human(Agent):
             self.get_action(state)
 
 
-# class Gekko(Agent):
-#    def __init__(self, name):
-#        super(Gekko, self).__init__(name)
+class Gekko(Agent):
+    def __init__(self, name):
+        super(Gekko, self).__init__(name)
+
+    def get_action(self, state: State):
+        #utility(state)
+        a = state.get_avail_actions()
+        print(self.gekko_utility(state))
+        print(a)
+
+        userMove = input("enter move 0-6: ")
+        if int(userMove) in a:
+            return int(userMove)
+        else:
+            print("Invalid Move")
+            self.get_action(state)
 
 
-# class MinMax(Agent):
-#   def __init__(self, name):
-#       super(MinMax, self).__init__(name)
+    def gekko_utility(self, state):
+        #tempState = deepcopy(state)
+
+        board = state.board
+        n_cols = len(board[0]) - 1
+        n_rows = len(board) - 1
+
+        def diags_pos():
+            """Get positive diagonals, going from bottom-left to top-right."""
+            for di in ([(j, i - j) for j in range(n_cols)] for i in range(n_cols + n_rows - 1)):
+                yield [board[i][j] for i, j in di if i >= 0 and j >= 0 and i < n_cols and j < n_rows]
+
+        def diags_neg():
+            """Get negative diagonals, going from top-left to bottom-right."""
+            for di in ([(j, i - n_cols + j + 1) for j in range(n_cols)] for i in range(n_cols + n_rows - 1)):
+                yield [board[i][j] for i, j in di if i >= 0 and j >= 0 and i < n_cols and j < n_rows]
+
+        cols = list(map(list, list(zip(*board))))
+        rows = board
+        diags = list(diags_neg()) + list(diags_pos())
+        lines = rows + cols + diags
+
+        return lines
+        
+
+    def select_move(self, state):
+        # keep the utility lists structured so we can retrace the column index
+        # make a greedy move to look for 3 connected with open neighbour
+            # if non exists, look for 2 connected with open neighbour
+            # return column index (avail move) for the open neighbour position
+        # random choice for catch-all
+
+        board = state.board             # 2d list
+        n_cols = len(board[0]) - 1      # max X value (columns also represent action space)
+        n_rows = len(board) - 1         # max Y
 
 
-# class Node:
-#     def __init__(self, state: State, parent: 'Node' = None):
-#         self.children: List['Nodes'] = []
-#         self.parent: 'Node' = parent
-#         self.state: State = state
+        return # work in progress
 
 
-# class MCTS(Agent):
-#    def __init__(self, name):
-#        super(MCTS, self).__init__(name)
+class MinMax(Agent):
+    def __init__(self, name):
+        super(MinMax, self).__init__(name)
+
+
+
+class Node:
+    def __init__(self, state: State, parent: 'Node' = None):
+        self.children: List['Nodes'] = []
+        self.parent: 'Node' = parent
+        self.state: State = state
+
+class MCTS(Agent):
+    def __init__(self, name):
+        super(MCTS, self).__init__(name)
+
 
 
 # connecting states and agents
@@ -137,4 +202,10 @@ class Game:
 #game = Game(agents)
 # game.play()
 
-run()
+
+
+
+#run()
+
+testUtil()
+
