@@ -16,6 +16,11 @@ def testUtil():
     game = Game(agents)
     game.play()
 
+def testGekko():
+    agents = (Gekko('0'), Human('X'))
+    game = Game(agents)
+    game.play()
+
 
 # world and world model
 class State:
@@ -47,7 +52,7 @@ class State:
         return '\n' + header + '\n' + line + '\n' + board + '\n'
 
 
-# evaluate the utility of a state
+# evaluate the utility of a state - this is really just a terminal check
 def utility(state: 'State'):
     board = state.board
     n_cols = len(board[0]) - 1
@@ -107,7 +112,7 @@ class Gekko(Agent):
     def __init__(self, name):
         super(Gekko, self).__init__(name)
 
-    def get_action(self, state: State):
+    def get_action2(self, state: State): # Gekko is currently Human for debugging
         # utility(state)
         a = state.get_avail_actions()
         print(self.gekko_utility(state))
@@ -120,22 +125,54 @@ class Gekko(Agent):
             print("Invalid Move")
             self.get_action(state)
 
+
+    def get_action(self, state: State):
+        actions = state.get_avail_actions()
+        bestUtil = 0
+        selectedAction = -1
+        print(state)
+
+        for a in actions:
+            newState = deepcopy(state)
+            #print(self.gekko_utility(newState))
+            newState.put_action(a, self)
+            print(self.gekko_utility(newState))
+            print(newState)
+            newStateUtil = utility(newState)
+            print(newStateUtil)
+            print("__________________")
+            
+            if newStateUtil < bestUtil:     # Gekko plays 'O'
+                bestUtil = newStateUtil
+                selectedAction = a
+
+        if selectedAction > -1:
+            print("Gekko found winning action!")
+            return selectedAction
+        else:
+            print("Gekko selecting random action")
+            return random.choice(actions)
+
+
     def gekko_utility(self, state):
         #tempState = deepcopy(state)
-
         board = state.board
         n_cols = len(board[0]) - 1
         n_rows = len(board) - 1
 
         def diags_pos():
             """Get positive diagonals, going from bottom-left to top-right."""
-            for di in ([(j, i - j) for j in range(n_cols)] for i in range(n_cols + n_rows - 1)):
-                yield [board[i][j] for i, j in di if i >= 0 and j >= 0 and i < n_cols and j < n_rows]
+            for di in ([(j, i - j) 
+                for j in range(n_cols)] 
+                    for i in range(n_cols + n_rows - 1)):
+                        yield [board[i][j] for i, j in di if i >= 0 and j >= 0 and i < n_cols and j < n_rows]
 
         def diags_neg():
             """Get negative diagonals, going from top-left to bottom-right."""
-            for di in ([(j, i - n_cols + j + 1) for j in range(n_cols)] for i in range(n_cols + n_rows - 1)):
-                yield [board[i][j] for i, j in di if i >= 0 and j >= 0 and i < n_cols and j < n_rows]
+            for di in ([(j, i - n_cols + j + 1) 
+                for j in range(n_cols)] 
+                    for i in range(n_cols + n_rows - 1)):
+                        yield [board[i][j] for i, j in di if i >= 0 and j >= 0 and i < n_cols and j < n_rows]
 
         cols = list(map(list, list(zip(*board))))
         rows = board
@@ -144,6 +181,7 @@ class Gekko(Agent):
 
         return lines
 
+
     def select_move(self, state):
         # keep the utility lists structured so we can retrace the column index
         # make a greedy move to look for 3 connected with open neighbour
@@ -151,10 +189,18 @@ class Gekko(Agent):
         # return column index (avail move) for the open neighbour position
         # random choice for catch-all
 
-        board = state.board             # 2d list
+        #board = state.board             # 2d list
         # max X value (columns also represent action space)
-        n_cols = len(board[0]) - 1
-        n_rows = len(board) - 1         # max Y
+        #n_cols = len(board[0]) - 1
+        #n_rows = len(board) - 1         # max Y
+
+        lines = self.gekko_utility(state)
+        strings = ["".join(s) for s in lines]
+        for string in strings:
+            if '000.' in string:
+                return -1
+            if 'XXX.' in string:
+                return 1
 
         return  # work in progress
 
@@ -208,4 +254,5 @@ class Game:
 
 
 # run()
-testUtil()
+#testUtil()
+testGekko()
