@@ -76,9 +76,6 @@ def utility(state: 'State'):
     return 0
 
 
-
-
-
 # parrent class for mcts, minmax, human, and any other idea for an agent you have
 class Agent:
     def __init__(self, name: str):
@@ -96,7 +93,7 @@ class Human(Agent):
         # return super().get_action(state)
         a = state.get_avail_actions()
         #userMove = int(input("enter move 0-6: "))
-        #print(utility(state))
+        # print(utility(state))
 
         userMove = input("enter move 0-6: ")
         if int(userMove) in a:
@@ -111,7 +108,7 @@ class Gekko(Agent):
         super(Gekko, self).__init__(name)
 
     def get_action(self, state: State):
-        #utility(state)
+        # utility(state)
         a = state.get_avail_actions()
         print(self.gekko_utility(state))
         print(a)
@@ -122,7 +119,6 @@ class Gekko(Agent):
         else:
             print("Invalid Move")
             self.get_action(state)
-
 
     def gekko_utility(self, state):
         #tempState = deepcopy(state)
@@ -147,27 +143,35 @@ class Gekko(Agent):
         lines = rows + cols + diags
 
         return lines
-        
 
     def select_move(self, state):
         # keep the utility lists structured so we can retrace the column index
         # make a greedy move to look for 3 connected with open neighbour
-            # if non exists, look for 2 connected with open neighbour
-            # return column index (avail move) for the open neighbour position
+        # if non exists, look for 2 connected with open neighbour
+        # return column index (avail move) for the open neighbour position
         # random choice for catch-all
 
         board = state.board             # 2d list
-        n_cols = len(board[0]) - 1      # max X value (columns also represent action space)
+        # max X value (columns also represent action space)
+        n_cols = len(board[0]) - 1
         n_rows = len(board) - 1         # max Y
 
-
-        return # work in progress
+        return  # work in progress
 
 
 class MinMax(Agent):
     def __init__(self, name):
         super(MinMax, self).__init__(name)
 
+    def get_action(self, state: State):
+        a = state.get_avail_actions()
+        return super().get_action(state)
+
+    def maxUtil():
+        return
+
+    def minUtil():
+        return
 
 
 class Node:
@@ -176,10 +180,10 @@ class Node:
         self.parent: 'Node' = parent
         self.state: State = state
 
+
 class MCTS(Agent):
     def __init__(self, name):
         super(MCTS, self).__init__(name)
-
 
 
 # connecting states and agents
@@ -203,9 +207,5 @@ class Game:
 # game.play()
 
 
-
-
-#run()
-
+# run()
 testUtil()
-
