@@ -59,9 +59,9 @@ class Agent:
         self.observation_size = observation_size
         self.action_size = action_size
         self.model = Model(observation_size, action_size)
-        self.discount_value = 0.9
-        #self.epsilon = 1.0
-        self.epsilon = 0.05
+        self.discount_value = 0.9  # gamma
+        self.epsilon = 1.0  # exploration rate
+        #self.epsilon = 0.05
         self.epsilonDecay = 0.99
         self.epsilonMin = 0.05
         self.randomActCount = 0
@@ -70,11 +70,9 @@ class Agent:
         self.memorySize = memorySize
         self.memory = deque([], maxlen=self.memorySize)
 
-
     def remember(self, state, action, reward, next_state, done):
         #s, a, r, s1, d = transition
         self.memory.append((state, action, reward, next_state, done))
-
 
     def act(self, state, hasRandom=False):
         if random.uniform(0, 1) < self.epsilon and hasRandom:
@@ -85,22 +83,21 @@ class Agent:
 
         return int(action)
 
-
     # update model based on replay memory
     # you might want to make a self.train() helper method
+
     def replay(self, batch_size):
         minibatch = random.sample(self.memory, batch_size)
         self.optimizer.zero_grad()  # clean
         for element in minibatch:
             self.train(element)
 
-        #self.epsilon *= self.epsilonDecay
-        self.epsilon -= 0.01
-        if self.epsilon < self.epsilonMin: #added lower bound on exploration rate
+        self.epsilon *= self.epsilonDecay
+        #self.epsilon -= 0.01
+        if self.epsilon < self.epsilonMin:  # added lower bound on exploration rate
             self.epsilon = self.epsilonMin
 
         self.optimizer.step()
-
 
     def train(self, transition):
         s0, a, r, s1, d = transition
@@ -115,7 +112,7 @@ class Agent:
                 float(torch.max(self.model.forward(s1)))
         else:
             value = r
-        
+
         pred = self.model.forward(s0)[a]
         loss = self.criterion(pred, value)
         loss.backward()
@@ -140,18 +137,23 @@ def train(env, agent, fileName, episodes=1000, batch_size=64):  # train for many
             state = next_state
             # 4. if we have enough experiences in our memory, learn from a batch with replay.
             if len(agent.memory) >= batch_size:
-                agent.replay(batch_size)        # fix? replay is called for each action after 64 actions, so we get epsilon_min after ~10 episodes
+                # fix? replay is called for each action after 64 actions, so we get epsilon_min after ~10 episodes
+                agent.replay(batch_size)
+                #print("agent did replay")
 
         if totalReward > highestReward:
             highestReward = totalReward
         print("   - ep: " + str(e) + " reward = " + str(totalReward) +
               " / " + str(highestReward) + " (highest)  |  current_epsilon = " + str(agent.epsilon) + "   |   random_acts = " + str(agent.randomActCount))
         if e > 0 and e % 10 == 0:
-            torch.save(agent.model.state_dict(), fileName + "_"+str(episodes)+".pth")
-            print("¤¤¤ q-model saved as: " + fileName + "_"+str(episodes)+".pth" +" ¤¤¤")
+            torch.save(agent.model.state_dict(),
+                       fileName + "_"+str(episodes)+".pth")
+            print("¤¤¤ q-model saved as: " + fileName +
+                  "_"+str(episodes)+".pth" + " ¤¤¤")
 
     torch.save(agent.model.state_dict(), fileName + "_"+str(episodes)+".pth")
-    print("¤¤¤ END OF TRAINING, q-model saved as: " + fileName + "_"+str(episodes)+".pth" +" ¤¤¤")
+    print("¤¤¤ END OF TRAINING, q-model saved as: " +
+          fileName + "_"+str(episodes)+".pth" + " ¤¤¤")
     env.close()
 
 
@@ -165,7 +167,8 @@ def playtest(env, agent, episodes=10):
         done = False
         totalReward = 0
         while not done:
-            action = agent.act(state)   # random default = False, which means exploration is only active in the training function
+            # random default = False, which means exploration is only active in the training function
+            action = agent.act(state)
             # print(action)
             state, reward, done, _, _ = env.step(action)
             totalReward += reward
@@ -182,11 +185,12 @@ agent = Agent(env.observation_space.shape[0], env.action_space.n, 5000)
 # modelFile = 'model4-memory5k-ep300.pth_300end.pth'
 #modelFile = 'model5-mem5k-minEps0.05-a'
 #modelFile = 'model5-mem5k-minEps0.05-a_300.pth'
-modelFile = 'model5-mem5k-minEps0.05-a_300.pth_50.pth'
+#modelFile = 'model5-mem5k-minEps0.05-a_300.pth_50.pth'
+modelFile = 'model6-mem5k-minEps0.05-d'
 
-agent.model.load_state_dict(torch.load(modelFile))
+# agent.model.load_state_dict(torch.load(modelFile))
 
-#train(env, agent, modelFile, 50)
+train(env, agent, modelFile, 200)
 #torch.save(agent.model.state_dict(), modelFile+"_300end.pth")
 
-playtest(env, agent)
+#playtest(env, agent)
