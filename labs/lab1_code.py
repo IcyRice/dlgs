@@ -144,7 +144,7 @@ class Gekko(Agent):
 
         if action == -1:
             action = random.choice(legal_actions)
-            print(self.name, "-Gekko plays a random move")
+            print(self.name, "-Gekko plays a random move: ", action)
         return action
 
 
@@ -277,10 +277,10 @@ class MinMax(Agent):
             self.isMax = True
         else:
             self.isMax = False
-        # careful with this
-        self.depth_limit = 3 
+        self.depth_limit = 2    # careful with this
 
     def get_action(self, state: State):
+        self.recursionCounter = 0
         actions = state.get_avail_actions()
         currentVal = 0
         currentAction = -1
@@ -291,6 +291,7 @@ class MinMax(Agent):
                 newState.put_action(a, self)
                 val = self.minimax(newState, 0, self.isMax)
                 if val > currentVal:
+                    currentVal = val
                     currentAction = a
         else:
             for a in actions:
@@ -298,10 +299,12 @@ class MinMax(Agent):
                 newState.put_action(a, self)
                 val = self.minimax(newState, 0, self.isMax)
                 if val < currentVal:
+                    currentVal = val
                     currentAction = a
         if currentAction == -1:
             currentAction = random.choice(actions)
             print(self.name, "-MinMax plays a random action: ", currentAction)
+        print("Minmax plays: ", currentAction, " | recursions: ", self.recursionCounter)
         return currentAction
 
 
@@ -312,13 +315,14 @@ class MinMax(Agent):
         return
 
     def minimax(self, state: State, depth, isMax):
+        self.recursionCounter += 1
         value = utility(state)        
         if value == 1 or value == -1: # reached terminal state
-            print("Hit terminal state with util: ", value)
+            #print("Hit terminal state with util: ", value, " isMax? ", isMax)
             return value
 
         if depth >= self.depth_limit:
-            print("Hit search depth limit: ", depth, " value = ", value)
+            #print("Hit search depth limit: ", depth, " value = ", value)
             return value
 
         # MAX
