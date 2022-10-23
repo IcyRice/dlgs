@@ -161,14 +161,12 @@ class Gekko(Agent):
 
         def diags_pos():
             """Get positive diagonals, going from bottom-left to top-right."""
-            for di in ([(j, i - j) for j in range(n_cols)]
-                       for i in range(n_cols + n_rows - 1)):
+            for di in ([(j, i - j) for j in range(n_cols)] for i in range(n_cols + n_rows - 1)):
                 yield [board[i][j] for i, j in di if i >= 0 and j >= 0 and i < n_cols and j < n_rows]
 
         def diags_neg():
             """Get negative diagonals, going from top-left to bottom-right."""
-            for di in ([(j, i - n_cols + j + 1) for j in range(n_cols)]
-                       for i in range(n_cols + n_rows - 1)):
+            for di in ([(j, i - n_cols + j + 1) for j in range(n_cols)] for i in range(n_cols + n_rows - 1)):
                 yield [board[i][j] for i, j in di if i >= 0 and j >= 0 and i < n_cols and j < n_rows]
 
         cols = list(map(list, list(zip(*board))))
