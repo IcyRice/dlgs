@@ -28,6 +28,11 @@ def testGekkoMinmax():
     game = Game(agents)
     game.play()
 
+def testMinmaxGekko():
+    agents = (MinMax('O'), Gekko('X'))
+    game = Game(agents)
+    game.play()
+
 def testMinmaxHuman():
     agents = (MinMax('O'), Human('X'))
     game = Game(agents)
@@ -136,11 +141,11 @@ class Gekko(Agent):
             newUtil = self.gekko_utility(newState)
             if newUtil == self.targetUtil:          # a move that wins
                 action = a
-                print(self.name, "-Gekko plays move for 4 in a row - and now wins! util = ", newUtil)
+                print(self.name, "-Gekko plays move for 4 in a row: ", a, " - and now wins! | util = ", newUtil)
                 break
             elif newUtil == self.targetUtil * 2:    # a move that gives the agent 3 in a row
                 action = a
-                print(self.name, "-Gekko plays move for 3 in a row, util = ", newUtil)
+                print(self.name, "-Gekko plays move for 3 in a row: ", a, " | util = ", newUtil)
 
         if action == -1:
             action = random.choice(legal_actions)
@@ -189,13 +194,14 @@ class MinMax(Agent):
             self.isMax = True
         else:
             self.isMax = False
-        self.depth_limit = 2    # careful with this
+        self.depth_limit = 2    # careful with this, the search-tree goes bonkers
+
 
     def get_action(self, state: State):
         self.recursionCounter = 0
         actions = state.get_avail_actions()
         currentVal = 0
-        currentAction = -1
+        currentAction = -1  #default invalid action
 
         if self.isMax:
             for a in actions:
@@ -216,15 +222,9 @@ class MinMax(Agent):
         if currentAction == -1:
             currentAction = random.choice(actions)
             print(self.name, "-MinMax plays a random action: ", currentAction)
-        print("Minmax plays: ", currentAction, " | recursions: ", self.recursionCounter)
+        print(self.name, "-Minmax plays: ", currentAction, " | recursions: ", self.recursionCounter)
         return currentAction
 
-
-    def maxUtil():
-        return
-
-    def minUtil():
-        return
 
     def minimax(self, state: State, depth, isMax):
         self.recursionCounter += 1
@@ -268,6 +268,7 @@ class Node:
         self.parent: 'Node' = parent
         self.state: State = state
         self.visitCount = 0
+        self.value = 0
 
 
 class MCTS(Agent):
@@ -280,26 +281,44 @@ class MCTS(Agent):
         return self.search(state)
 
 
-    def search(self, state: State):
+    def search(self, state: State): 
         root = Node(state)
 
         return
 
 
-    def select(self):
-        return
+    # creates and selects a new child if the parent node has not explored its actions yet
+    # returns random child if parent is already explored
+    def select(self, parent: Node):   
+        actions = parent.state.get_avail_actions()
+        for a in actions:
+            if parent.children[a] is None:
+                return self.expand(parent)
+        return random.choice(parent.children)
 
     
-    def expand(self):
+    # takes a node in the tree with incomplete list of children and initializes the next child
+    def expand(self, node: Node):
+        # assumes an incomplete list of children
+        # the [len(node.children)]-index should reflect the action we need to expand
+        action = node.state.get_avail_actions()[len(node.children)] 
+        newState = deepcopy(node.state)
+        newState.put_action(action, self)       # s1 = (s0, a)
+        child = Node(newState, action, node)    # initialize the new action/child-node with its state
+        node.children.append(child)
+        return child
+
+
+    def simulate(self, depth, node: Node):
         return
 
 
-    def simulate(self):
-        return
-
-
-    def backprop(self):
-        return
+    def backprop(self, node: Node, value):
+        node.visitCount += 1
+        node.value += value
+        if node.parent is not None:
+            self.backprop(node.parent, value)
+    
 
 
 
@@ -328,4 +347,5 @@ class Game:
 # testUtil()
 #testGekko()
 #testGekkoMinmax()
-testMinmaxHuman()
+testMinmaxGekko()
+#testMinmaxHuman()
