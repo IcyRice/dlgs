@@ -267,11 +267,43 @@ class Node:
         self.children: List['Nodes'] = []
         self.parent: 'Node' = parent
         self.state: State = state
+        self.visitCount = 0
 
 
 class MCTS(Agent):
     def __init__(self, name):
         super(MCTS, self).__init__(name)
+        self.epsilon = 0.1  # exploitation vs exploration
+
+
+    def get_action(self, state: State):
+        return self.search(state)
+
+
+    def search(self, state: State):
+        root = Node(state)
+
+        return
+
+
+    def select(self):
+        return
+
+    
+    def expand(self):
+        return
+
+
+    def simulate(self):
+        return
+
+
+    def backprop(self):
+        return
+
+
+
+
 
 
 # connecting states and agents
@@ -290,13 +322,10 @@ class Game:
         print("GAME OVER")
 
 
-#agents = (Agent('O'), Agent('X'))
-#game = Game(agents)
-# game.play()
 
 
 # run()
 # testUtil()
 #testGekko()
-testGekkoMinmax()
-#testMinmaxHuman()
+#testGekkoMinmax()
+testMinmaxHuman()
