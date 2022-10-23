@@ -1,5 +1,6 @@
 # imports
 import random
+import math
 from typing import List, Tuple
 import time
 from copy import deepcopy  # world -> thought
@@ -18,7 +19,7 @@ def testUtil():
 
 
 def testGekko():
-    agents = (Gekko('0'), Human('X'))
+    agents = (Gekko('0'), Gekko('X'))
     game = Game(agents)
     game.play()
 
@@ -108,11 +109,70 @@ class Human(Agent):
 class Gekko(Agent):
     def __init__(self, name):
         super(Gekko, self).__init__(name)
+        if self.name == 'X':
+            self.targetUtil = 1
+        else:
+            self.targetUtil = -1
+
+
+    def get_action(self, state: State):
+        legal_actions = state.get_avail_actions()
+        action = -1
+
+        for a in legal_actions:
+            newState = deepcopy(state)
+            newState.put_action(a, self)
+            newUtil = self.gekko_utility(newState)
+            if newUtil == self.targetUtil:          # a move that wins
+                action = a
+                print(self.name, "-Gekko plays move for 4 in a row - and now wins! util = ", newUtil)
+                break
+            elif newUtil == self.targetUtil * 2:    # a move that gives the agent 3 in a row
+                action = a
+                print(self.name, "-Gekko plays move for 3 in a row, util = ", newUtil)
+
+        if action == -1:
+            action = random.choice(legal_actions)
+            print(self.name, "-Gekko plays a random move")
+        return action
+
+
+    def gekko_utility(self, state: State):
+        board = state.board
+        n_cols = len(board[0]) - 1
+        n_rows = len(board) - 1
+
+        def diags_pos():
+            """Get positive diagonals, going from bottom-left to top-right."""
+            for di in ([(j, i - j) for j in range(n_cols)] for i in range(n_cols + n_rows - 1)):
+                yield [board[i][j] for i, j in di if i >= 0 and j >= 0 and i < n_cols and j < n_rows]
+
+        def diags_neg():
+            """Get negative diagonals, going from top-left to bottom-right."""
+            for di in ([(j, i - n_cols + j + 1) for j in range(n_cols)] for i in range(n_cols + n_rows - 1)):
+                yield [board[i][j] for i, j in di if i >= 0 and j >= 0 and i < n_cols and j < n_rows]
+
+        cols = list(map(list, list(zip(*board))))
+        rows = board
+        diags = list(diags_neg()) + list(diags_pos())
+        lines = rows + cols + diags
+        strings = ["".join(s) for s in lines]
+        for string in strings:
+            if 'OOOO' in string:
+                return -1
+            if 'XXXX' in string:
+                return 1
+            if '000' in string:
+                return -2
+            if 'XXX' in string:
+                return 2
+        return 0
+
 
     def get_action2(self, state: State):  # Gekko is currently Human for debugging
         # utility(state)
         a = state.get_avail_actions()
-        print(self.gekko_utility(state))
+        print(self.gekko_utility2(state))
         print(a)
 
         userMove = input("enter move 0-6: ")
@@ -120,9 +180,10 @@ class Gekko(Agent):
             return int(userMove)
         else:
             print("Invalid Move")
-            self.get_action(state)
+            self.get_action2(state)
 
-    def get_action(self, state: State):
+
+    def get_action3(self, state: State):
         actions = state.get_avail_actions()
         bestUtil = 0
         selectedAction = -1
@@ -132,9 +193,9 @@ class Gekko(Agent):
             newState = deepcopy(state)
             # print(self.gekko_utility(newState))
             newState.put_action(a, self)
-            print(self.gekko_utility(newState))
+            #print(self.gekko_utility(newState))
             print(newState)
-            newStateUtil = utility(newState)
+            newStateUtil = self.gekko_utility(newState)
             print(newStateUtil)
             print("__________________")
 
@@ -149,7 +210,8 @@ class Gekko(Agent):
             print("Gekko selecting random action")
             return random.choice(actions)
 
-    def gekko_utility(self, state):
+
+    def gekko_utility2(self, state: State):
         #tempState = deepcopy(state)
         board = state.board
         n_cols = len(board[0]) - 1
@@ -171,6 +233,7 @@ class Gekko(Agent):
         lines = rows + cols + diags
 
         return lines
+
 
     def select_move(self, state):
         # keep the utility lists structured so we can retrace the column index
@@ -195,9 +258,11 @@ class Gekko(Agent):
         return  # work in progress
 
 
+
 class MinMax(Agent):
     def __init__(self, name):
         super(MinMax, self).__init__(name)
+        self.depth_limit = 0
 
     def get_action(self, state: State):
         a = state.get_avail_actions()
@@ -208,6 +273,18 @@ class MinMax(Agent):
 
     def minUtil():
         return
+
+    def minimax(self, depth, state: State, isMax):
+        value = utility(state)
+        if value == 1 or value == -1: # reached terminal state
+            return value
+
+        actions = state.get_avail_actions()
+
+        
+
+        return
+
 
 
 class Node:
