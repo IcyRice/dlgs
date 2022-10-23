@@ -19,9 +19,20 @@ def testUtil():
 
 
 def testGekko():
-    agents = (Gekko('0'), Gekko('X'))
+    agents = (Gekko('O'), Gekko('X'))
     game = Game(agents)
     game.play()
+
+def testGekkoMinmax():
+    agents = (Gekko('O'), MinMax('X'))
+    game = Game(agents)
+    game.play()
+
+def testMinmaxHuman():
+    agents = (MinMax('O'), Human('X'))
+    game = Game(agents)
+    game.play()
+
 
 
 # world and world model
@@ -162,7 +173,7 @@ class Gekko(Agent):
                 return -1
             if 'XXXX' in string:
                 return 1
-            if '000' in string:
+            if 'OOO' in string:
                 return -2
             if 'XXX' in string:
                 return 2
@@ -250,7 +261,7 @@ class Gekko(Agent):
         lines = self.gekko_utility(state)
         strings = ["".join(s) for s in lines]
         for string in strings:
-            if '000.' in string:
+            if 'OOO.' in string:
                 return -1
             if 'XXX.' in string:
                 return 1
@@ -262,11 +273,37 @@ class Gekko(Agent):
 class MinMax(Agent):
     def __init__(self, name):
         super(MinMax, self).__init__(name)
-        self.depth_limit = 0
+        if self.name == 'X':
+            self.isMax = True
+        else:
+            self.isMax = False
+        # careful with this
+        self.depth_limit = 3 
 
     def get_action(self, state: State):
-        a = state.get_avail_actions()
-        return super().get_action(state)
+        actions = state.get_avail_actions()
+        currentVal = 0
+        currentAction = -1
+
+        if self.isMax:
+            for a in actions:
+                newState = deepcopy(state)
+                newState.put_action(a, self)
+                val = self.minimax(newState, 0, self.isMax)
+                if val > currentVal:
+                    currentAction = a
+        else:
+            for a in actions:
+                newState = deepcopy(state)
+                newState.put_action(a, self)
+                val = self.minimax(newState, 0, self.isMax)
+                if val < currentVal:
+                    currentAction = a
+        if currentAction == -1:
+            currentAction = random.choice(actions)
+            print(self.name, "-MinMax plays a random action: ", currentAction)
+        return currentAction
+
 
     def maxUtil():
         return
@@ -274,16 +311,38 @@ class MinMax(Agent):
     def minUtil():
         return
 
-    def minimax(self, depth, state: State, isMax):
-        value = utility(state)
+    def minimax(self, state: State, depth, isMax):
+        value = utility(state)        
         if value == 1 or value == -1: # reached terminal state
+            print("Hit terminal state with util: ", value)
             return value
 
-        actions = state.get_avail_actions()
+        if depth >= self.depth_limit:
+            print("Hit search depth limit: ", depth, " value = ", value)
+            return value
 
-        
+        # MAX
+        if isMax:
+            actions = state.get_avail_actions()
+            for a in actions:
+                newState = deepcopy(state)
+                newState.put_action(a, self)
+                actionValue = self.minimax(newState, depth + 1, not isMax)
 
-        return
+                if actionValue > value: # maximizing
+                    value = actionValue
+        # MIN
+        else:
+            actions = state.get_avail_actions()
+            for a in actions:
+                newState = deepcopy(state)
+                newState.put_action(a, self)
+                actionValue = self.minimax(newState, depth + 1, not isMax)
+
+                if actionValue < value: # minimizing
+                    value = actionValue
+
+        return value
 
 
 
@@ -322,4 +381,6 @@ class Game:
 
 # run()
 # testUtil()
-testGekko()
+#testGekko()
+testGekkoMinmax()
+#testMinmaxHuman()
