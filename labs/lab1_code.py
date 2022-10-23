@@ -96,11 +96,7 @@ class Human(Agent):
         super(Human, self).__init__(name)
 
     def get_action(self, state: State):
-        # return super().get_action(state)
         a = state.get_avail_actions()
-        #userMove = int(input("enter move 0-6: "))
-        # print(utility(state))
-
         userMove = input("enter move 0-6: ")
         if int(userMove) in a:
             return int(userMove)
