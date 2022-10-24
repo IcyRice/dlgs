@@ -1,7 +1,7 @@
 # imports
 import random
 import math
-from typing import List, Tuple
+from typing import ForwardRef, List, Tuple
 import time
 from copy import deepcopy  # world -> thought
 
@@ -23,21 +23,29 @@ def testGekko():
     game = Game(agents)
     game.play()
 
+
 def testGekkoMinmax():
     agents = (Gekko('O'), MinMax('X'))
     game = Game(agents)
     game.play()
+
 
 def testMinmaxGekko():
     agents = (MinMax('O'), Gekko('X'))
     game = Game(agents)
     game.play()
 
+
 def testMinmaxHuman():
     agents = (MinMax('O'), Human('X'))
     game = Game(agents)
     game.play()
 
+
+def testGekkoMCTS():
+    agents = (Gekko('O'), MCTS('X'))
+    game = Game(agents)
+    game.play()
 
 
 # world and world model
@@ -130,7 +138,6 @@ class Gekko(Agent):
         else:
             self.targetUtil = -1
 
-
     def get_action(self, state: State):
         legal_actions = state.get_avail_actions()
         action = -1
@@ -141,17 +148,18 @@ class Gekko(Agent):
             newUtil = self.gekko_utility(newState)
             if newUtil == self.targetUtil:          # a move that wins
                 action = a
-                print(self.name, "-Gekko plays move for 4 in a row: ", a, " - and now wins! | util = ", newUtil)
+                print(self.name, "-Gekko plays move for 4 in a row: ",
+                      a, " - and now wins! | util = ", newUtil)
                 break
             elif newUtil == self.targetUtil * 2:    # a move that gives the agent 3 in a row
                 action = a
-                print(self.name, "-Gekko plays move for 3 in a row: ", a, " | util = ", newUtil)
+                print(self.name, "-Gekko plays move for 3 in a row: ",
+                      a, " | util = ", newUtil)
 
         if action == -1:
             action = random.choice(legal_actions)
             print(self.name, "-Gekko plays a random move: ", action)
         return action
-
 
     def gekko_utility(self, state: State):
         board = state.board
@@ -185,8 +193,6 @@ class Gekko(Agent):
         return 0
 
 
-
-
 class MinMax(Agent):
     def __init__(self, name):
         super(MinMax, self).__init__(name)
@@ -196,12 +202,11 @@ class MinMax(Agent):
             self.isMax = False
         self.depth_limit = 2    # careful with this, the search-tree goes bonkers
 
-
     def get_action(self, state: State):
         self.recursionCounter = 0
         actions = state.get_avail_actions()
         currentVal = 0
-        currentAction = -1  #default invalid action
+        currentAction = -1  # default invalid action
 
         if self.isMax:
             for a in actions:
@@ -222,14 +227,14 @@ class MinMax(Agent):
         if currentAction == -1:
             currentAction = random.choice(actions)
             print(self.name, "-MinMax plays a random action: ", currentAction)
-        print(self.name, "-Minmax plays: ", currentAction, " | recursions: ", self.recursionCounter)
+        print(self.name, "-Minmax plays: ", currentAction,
+              " | recursions: ", self.recursionCounter)
         return currentAction
-
 
     def minimax(self, state: State, depth, isMax):
         self.recursionCounter += 1
-        value = utility(state)        
-        if value == 1 or value == -1: # reached terminal state
+        value = utility(state)
+        if value == 1 or value == -1:  # reached terminal state
             #print("Hit terminal state with util: ", value, " isMax? ", isMax)
             return value
 
@@ -245,7 +250,7 @@ class MinMax(Agent):
                 newState.put_action(a, self)
                 actionValue = self.minimax(newState, depth + 1, not isMax)
 
-                if actionValue > value: # maximizing
+                if actionValue > value:  # maximizing
                     value = actionValue
         # MIN
         else:
@@ -255,11 +260,10 @@ class MinMax(Agent):
                 newState.put_action(a, self)
                 actionValue = self.minimax(newState, depth + 1, not isMax)
 
-                if actionValue < value: # minimizing
+                if actionValue < value:  # minimizing
                     value = actionValue
 
         return value
-
 
 
 class Node:
@@ -267,62 +271,94 @@ class Node:
         self.children: List['Nodes'] = []
         self.parent: 'Node' = parent
         self.state: State = state
+        self.action = -1
         self.visitCount = 0
         self.value = 0
+        self.depth = 0
+        self.isLeaf = False
 
 
 class MCTS(Agent):
     def __init__(self, name):
         super(MCTS, self).__init__(name)
         self.epsilon = 0.1  # exploitation vs exploration
-
+        self.maxSteps = 10
 
     def get_action(self, state: State):
         return self.search(state)
 
-
-    def search(self, state: State): 
+    def search(self, state: State):
         root = Node(state)
-
-        return
-
+        steps = 0
+        while steps < self.maxSteps:
+            steps += 1
+            v1 = self.select(root)
+            reward = self.simulate(steps, v1)
+            self.backprop(v1, reward)
+        # return max(root.children)
+        move = self.bestChild(root)
+        print(self.name, "-MCTS plays: ", move)
+        return move
 
     # creates and selects a new child if the parent node has not explored its actions yet
     # returns random child if parent is already explored
-    def select(self, parent: Node):   
+    def select(self, parent: Node):
         actions = parent.state.get_avail_actions()
         for a in actions:
-            if parent.children[a] is None:
-                return self.expand(parent)
+            if len(parent.children) < a:
+                return self.expand(parent, a)
+        print("select(): node has all children, return random")
         return random.choice(parent.children)
 
-    
     # takes a node in the tree with incomplete list of children and initializes the next child
-    def expand(self, node: Node):
+
+    def expand(self, node: Node, a):
         # assumes an incomplete list of children
         # the [len(node.children)]-index should reflect the action we need to expand
-        action = node.state.get_avail_actions()[len(node.children)] 
+        #action = node.state.get_avail_actions()[len(node.children)]
+        action = a
         newState = deepcopy(node.state)
         newState.put_action(action, self)       # s1 = (s0, a)
-        child = Node(newState, action, node)    # initialize the new action/child-node with its state
+        # initialize the new action/child-node with its state
+        child = Node(newState, node)
+        child.action = action
         node.children.append(child)
         return child
 
-
     def simulate(self, depth, node: Node):
-        return
+        s = node.state
+        while utility(s) == 0 and depth < self.maxSteps:
+            actions = s.get_avail_actions()
+            a = random.choice(actions)
+            s = self.forward(s, a)
 
+        terminalUtil = utility(s)
+        print("simulate(): stopping sim with util: ",
+              terminalUtil, " | at depth: ", depth)
+        return terminalUtil
+
+    def forward(self, state: State, action):
+        newState = deepcopy(state)
+        newState.put_action(action, self)
+        return newState
+
+    def bestChild(self, node: Node):  # returns the action
+        values = []
+        bestVal = -1
+        bestAction = -1
+        for c in range(len(node.children)):
+            values.append(node.children[c].value)
+            if node.children[c].value > bestVal:
+                bestVal = node.children[c].value
+                bestAction = node.children[c].action
+        print(values)
+        return bestAction
 
     def backprop(self, node: Node, value):
         node.visitCount += 1
         node.value += value
         if node.parent is not None:
             self.backprop(node.parent, value)
-    
-
-
-
-
 
 
 # connecting states and agents
@@ -341,11 +377,10 @@ class Game:
         print("GAME OVER")
 
 
-
-
 # run()
 # testUtil()
-#testGekko()
-#testGekkoMinmax()
-testMinmaxGekko()
-#testMinmaxHuman()
+# testGekko()
+# testGekkoMinmax()
+# testMinmaxGekko()
+# testMinmaxHuman()
+testGekkoMCTS()
