@@ -185,7 +185,7 @@ agent = Agent(env.observation_space.shape[0], env.action_space.n, 5000)
 # modelFile = 'model4-memory5k-ep300.pth_300end.pth'
 #modelFile = 'model5-mem5k-minEps0.05-a'
 #modelFile = 'model5-mem5k-minEps0.05-a_300.pth'
-#modelFile = 'model5-mem5k-minEps0.05-a_300.pth_50.pth'
+# modelFile = 'model5-mem5k-minEps0.05-a_300.pth_50.pth' # <--- this one is good
 #modelFile = 'model6-mem5k-minEps0.05-d'
 modelFile = 'training-model-for-submission'
 
